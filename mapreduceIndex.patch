@@ -1,0 +1,116 @@
+diff --git a/secondary/common/index.go b/secondary/common/index.go
+index 5666da2e..1def8d3f 100644
+--- a/secondary/common/index.go
++++ b/secondary/common/index.go
+@@ -182,8 +182,10 @@ type IndexDefn struct {
+ 	ExprType        ExprType        `json:"exprType,omitempty"`
+ 	PartitionScheme PartitionScheme `json:"partitionScheme,omitempty"`
+ 	//PartitionKey is obsolete
+-	PartitionKey       string   `json:"partitionKey,omitempty"`
+-	WhereExpr          string   `json:"where,omitempty"`
++	PartitionKey string `json:"partitionKey,omitempty"`
++	WhereExpr    string `json:"where,omitempty"`
++	JSPath       string `json:"JSPath,omitempty"`
++
+ 	Desc               []bool   `json:"desc,omitempty"`
+ 	Deferred           bool     `json:"deferred,omitempty"`
+ 	Immutable          bool     `json:"immutable,omitempty"`
+diff --git a/secondary/indexer/kv_sender.go b/secondary/indexer/kv_sender.go
+index f69b34ae..9dd68167 100644
+--- a/secondary/indexer/kv_sender.go
++++ b/secondary/indexer/kv_sender.go
+@@ -844,7 +844,6 @@ func sendShutdownTopic(ap *projClient.Client,
+ }
+ 
+ func getTopicForStreamId(streamId c.StreamId) string {
+-
+ 	return StreamTopicName[streamId]
+ 
+ }
+@@ -1164,8 +1163,17 @@ func convertIndexDefnToProtobuf(indexDefn c.IndexDefn) *protobuf.IndexDefn {
+ 
+ 	using := protobuf.StorageType(
+ 		protobuf.StorageType_value[strings.ToLower(string(indexDefn.Using))]).Enum()
+-	exprType := protobuf.ExprType(
+-		protobuf.ExprType_value[strings.ToUpper(string(indexDefn.ExprType))]).Enum()
++	//exprType := protobuf.ExprType(protobuf.ExprType_value["JAVASCRIPT"]).Enum() //This line if the it contains jsfile path
++	exprType := protobuf.ExprType(protobuf.ExprType_value[strings.ToUpper(string(indexDefn.ExprType))]).Enum()
++
++	//Should take it from metakv
++	jsExprs := map[string]map[string]string{
++		"B1": map[string]string{"`age1`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age2.js", "`company`": "/Users/ankitdamodarprabhu/GOC/jsFiles/company.js", "`age`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age1.js", "`docid`": "/Users/ankitdamodarprabhu/GOC/jsFiles/docid.js"},
++		"B2": map[string]string{"`age1`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age2.js", "`company`": "/Users/ankitdamodarprabhu/GOC/jsFiles/company.js", "`age`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age1.js", "`docid`": "/Users/ankitdamodarprabhu/GOC/jsFiles/docid.js"},
++		"B3": map[string]string{"`age1`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age2.js", "`company`": "/Users/ankitdamodarprabhu/GOC/jsFiles/company.js", "`age`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age1.js", "`docid`": "/Users/ankitdamodarprabhu/GOC/jsFiles/docid.js"},
++		"B4": map[string]string{"`age1`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age2.js", "`company`": "/Users/ankitdamodarprabhu/GOC/jsFiles/company.js", "`age`": "/Users/ankitdamodarprabhu/GOC/jsFiles/age1.js", "`docid`": "/Users/ankitdamodarprabhu/GOC/jsFiles/docid.js"},
++	}
++
+ 	partnScheme := protobuf.PartitionScheme(
+ 		protobuf.PartitionScheme_value[string(c.SINGLE)]).Enum()
+ 	if c.IsPartitioned(indexDefn.PartitionScheme) {
+@@ -1185,6 +1193,7 @@ func convertIndexDefnToProtobuf(indexDefn c.IndexDefn) *protobuf.IndexDefn {
+ 		PartnExpressions:   indexDefn.PartitionKeys,
+ 		WhereExpression:    proto.String(indexDefn.WhereExpr),
+ 		RetainDeletedXATTR: proto.Bool(indexDefn.RetainDeletedXATTR),
++		JSPath:             proto.String(jsExprs[indexDefn.Bucket][indexDefn.SecExprs[0]]), //Path to the JSFILE
+ 	}
+ 
+ 	return defn
+diff --git a/secondary/protobuf/projector/index.pb.go b/secondary/protobuf/projector/index.pb.go
+index 6e05c8ea..e130c798 100644
+--- a/secondary/protobuf/projector/index.pb.go
++++ b/secondary/protobuf/projector/index.pb.go
+@@ -250,6 +250,7 @@ type IndexDefn struct {
+ 	PartnExpressions   []string `protobuf:"bytes,11,rep,name=partnExpressions" json:"partnExpressions,omitempty"`
+ 	RetainDeletedXATTR *bool    `protobuf:"varint,12,opt,name=retainDeletedXATTR" json:"retainDeletedXATTR,omitempty"`
+ 	XXX_unrecognized   []byte   `json:"-"`
++	JSPath *string `protobuf:"bytes,10,opt,name=JSPath" json:"JSPath,omitempty"`
+ }
+ 
+ func (m *IndexDefn) Reset()         { *m = IndexDefn{} }
+@@ -298,6 +299,13 @@ func (m *IndexDefn) GetExprType() ExprType {
+ 	return ExprType_JAVASCRIPT
+ }
+ 
++func (m *IndexDefn) GetJSPath() string {
++        if m != nil {
++                return *m.JSPath
++        }
++        return ""
++}
++
+ func (m *IndexDefn) GetSecExpressions() []string {
+ 	if m != nil {
+ 		return m.SecExpressions
+diff --git a/secondary/protobuf/projector/projector.go b/secondary/protobuf/projector/projector.go
+index bb504582..9946534a 100644
+--- a/secondary/protobuf/projector/projector.go
++++ b/secondary/protobuf/projector/projector.go
+@@ -645,7 +645,6 @@ func (req *DelBucketsRequest) Decode(data []byte) (err error) {
+ // for topic to add one or more new instances/engines to a topic.
+ func NewAddInstancesRequest(
+ 	topic string, instances []*Instance) *AddInstancesRequest {
+-
+ 	return &AddInstancesRequest{
+ 		Topic:     proto.String(topic),
+ 		Instances: instances,
+@@ -787,11 +786,19 @@ func (req *ShutdownTopicRequest) Decode(data []byte) (err error) {
+ func getEvaluators(instances []*Instance,
+ 	version FeedVersion) (map[uint64]c.Evaluator, error) {
+ 
++	var err error
++	var ie c.Evaluator
+ 	engines := make(map[uint64]c.Evaluator)
+ 	for _, instance := range instances {
+ 		uuid := instance.GetUuid()
+ 		if val := instance.GetIndexInstance(); val != nil {
+-			ie, err := NewIndexEvaluator(val, version)
++			switch val.GetDefinition().GetExprType() {
++			case ExprType_JAVASCRIPT:
++				ie, err = NewIndexJSEvaluator(val, version)
++
++			case ExprType_N1QL:
++				ie, err = NewIndexEvaluator(val, version)
++			}
+ 			if err != nil {
+ 				return nil, err
+ 			}
