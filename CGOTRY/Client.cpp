@@ -23,8 +23,8 @@ void* Engine::Route(struct metaData metadoc,const char* doc, std::string filenam
     return (void*)workers[index]->Map(metadoc,doc,filename);
 }
 
-void Engine::Compile(std::string msg){
+void Engine::Compile(std::string msg,const char* code){
     for(int i=0;i<NumberOfIsolates;i++){
-        workers[i]->v8WorkLoad(msg);
+        workers[i]->v8WorkLoad(msg,code);
     }
 }

@@ -12,9 +12,9 @@ EngineObj CreateEngine(int NumberOfIsolates){
     return (void*)e;
 }
 
-void Compile(char* filename,EngineObj e){
+void Compile(char* filename,EngineObj e,const char* code){
     Engine *e1=(Engine*)e;
-    e1->Compile(std::string(filename));
+    e1->Compile(std::string(filename),code);
 }
 
 returnType Route(EngineObj e,struct metaData meta,const char* doc,const char* filename){

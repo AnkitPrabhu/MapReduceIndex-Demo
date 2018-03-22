@@ -14,7 +14,7 @@ struct ValueForType{
 };
 
 struct msg_response{
-    int type[20];//SShould change with increase in arguments in emit function
+    int type[20];//Should change with increase in arguments in emit function
     ValueForType arr[20]; //Should change with increase in arguments in emit function
     int ValueLength;
     int length;

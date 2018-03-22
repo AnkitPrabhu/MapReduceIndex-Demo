@@ -25,6 +25,8 @@ enum TYPE{
     MAPEND,
     UNDEFINED,
     JSONSTRING,
+    EMITSTART,
+    EMITEND,
 };
 
 class v8Instance{
@@ -38,7 +40,7 @@ public:
     v8Instance(v8::Platform *platform); //same
     ~v8Instance();
     v8::Isolate *GetIsolate() { return isolate_; }
-    int v8WorkLoad(std::string source_path);
+    int v8WorkLoad(std::string source_path,const char* code);
     void Start();
     msg_response* Map(metaData value,const char* doc,std::string jsFile);
     

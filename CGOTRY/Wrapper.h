@@ -19,7 +19,7 @@ extern "C" {
     typedef void* returnType;
     static EngineObj e;
     EngineObj CreateEngine(int NumberOfIsolates);
-    void Compile(char* filename,EngineObj e);
+    void Compile(char* filename,EngineObj e,const char* code);
     returnType Route(EngineObj e,struct metaData meta,const char* doc,const char* filename);
     int getLength(returnType msg);
     void* GetTypeArray(returnType msg);

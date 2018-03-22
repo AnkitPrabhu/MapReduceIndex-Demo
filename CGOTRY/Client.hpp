@@ -14,7 +14,7 @@ class Engine{
     v8::Platform* platform;
 public:
     ~Engine();
-    void Compile(std::string msg);
+    void Compile(std::string msg,const char* code);
     Engine(int NumberOfIsolates);
     void* Route(struct metaData metadoc,const char* doc,std::string filename);
 private:
