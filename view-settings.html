@@ -1,0 +1,73 @@
+<!--Fragment for settings and creating an application-->
+<!--The controller that invokes this HTML must provide an implementation for formCtrl-->
+<!--The data binding is always done through $scope-->
+<div ng-show="!formCtrl.isDialog && formCtrl.showSuccessAlert"
+     class="animate-alert alert enable-ng-animation ng-scope alert-success">
+  <p class="ng-binding">{{formCtrl.successMessage}}</p>
+</div>
+<div ng-show="!formCtrl.isDialog && formCtrl.showWarningAlert"
+     class="animate-alert alert enable-ng-animation ng-scope alert-warning">
+  <p class="ng-binding">{{formCtrl.warningMessage}}</p>
+</div>
+<div class="dialog-lg">
+  <div class="panel-header">
+    <h2 ng-show="formCtrl.isDialog">Add Function</h2>
+    <h2 ng-show="!formCtrl.isDialog">Function Settings</h2>
+  </div>
+  <form name="formCtrl.createAppForm">
+    <div class="panel-content forms">
+      <div class="formrow">
+        <label>Function Name</label>
+        <input
+          type="text"
+          name="appname"
+          ng-disabled="!formCtrl.isDialog"
+          ng-model="appModel.appname">
+        <div
+          class="error field-error"
+          ng-show="formCtrl.createAppForm.appname.$error.required">
+          Name cannot be empty
+        </div>
+        <div
+          class="error field-error"
+          ng-show="formCtrl.createAppForm.appname.$error.appExists">
+          A function with this name already exists.
+        </div>
+        <div
+          class="error field-error"
+          ng-show="formCtrl.createAppForm.appname.$error.appnameInvalid">
+          Function name should be a valid identifier.
+        </div>
+      </div>
+      <div class="formrow">
+        <label>Description</label>
+        <textarea rows="3" ng-model="appModel.settings.description">
+        </textarea>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <a
+        ng-if="formCtrl.isDialog"
+        ng-click="$dismiss('cancel')">
+        Cancel
+      </a>
+      <button
+        ng-if="formCtrl.isDialog"
+        ng-click="$close('ok')">
+	Next: Add Code
+      </button>
+      <a
+        ng-if="!formCtrl.isDialog"
+        ng-click="formCtrl.cancelEdit($dismiss)">
+        Cancel
+      </a>
+      <button
+        ng-if="!formCtrl.isDialog"
+        ng-click="formCtrl.saveSettings($dismiss, $close)"
+        ng-disabled="formCtrl.isFormInvalid()">
+        Save
+      </button>
+    </div>
+  </form>
+</div>
+

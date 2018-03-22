@@ -1,0 +1,11 @@
+<div class="header-controls resp-xsml" ng-controller="HeaderCtrl as headerCtrl">
+<mn-element-cargo depot="subnav">
+    <nav ng-if="headerCtrl.isEventingRunning" class="sub-nav">
+      <a ui-sref="app.admin.eventing.summary" ui-sref-active="selected">Functions</a>
+      <a ui-sref="app.admin.eventing.views"
+       ng-class="{selected: ('app.admin.eventing.views' | includedByState)}">Library</a>
+    </nav>
+  </mn-element-cargo>
+</div>
+<div ui-view></div>
+

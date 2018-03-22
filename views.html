@@ -1,0 +1,81 @@
+<!--This is the View page-->
+<mn-element-cargo depot="actions">
+  <div class="header-controls resp-xsml" ng-controller="ViewHeaderCtrl as headerCtrl">
+    <div ng-if="headerCtrl.isEventingRunning">
+     <a ng-click="headerCtrl.showCreateDialogForView()">ADD LIBRARY</a>
+      <input type="file" id="loadConfig" name="config" style="display:none">
+    </div>
+  </div>
+
+</mn-element-cargo>
+
+<div ui-view></div>
+<div ng-if="viewCtrl.isEventingRunning">
+  <div ng-if="!viewCtrl.errorState">
+    <mn-element-cargo depot="alerts">
+      <div ng-show="viewCtrl.showSuccessAlert">
+        <div class="alert alert-success">
+          <p>{{viewCtrl.successMessage}}</p>
+        </div>
+      </div>
+      <div ng-show="viewCtrl.showErrorAlert">
+        <div class="alert alert-error">
+          <p>{{viewCtrl.errorMessage}}</p>
+        </div>
+      </div>
+    </mn-element-cargo>
+    <div class="cbui-table">
+      <div class="cbui-table-header" ng-if="!viewCtrl.isAppListEmpty()">
+        <span class="cbui-table-cell">function name</span>
+        <span class="cbui-table-cell">status</span>
+        <span class="cbui-table-cell"></span>
+      </div>
+      <section
+        class="has-hover"
+        ng-repeat="(appname, app) in viewCtrl.appList"
+        ng-class="['dynamic_' + app.uiState]"
+        ng-click="app.toggleActionsVisibility()">
+        <div class="cbui-tablerow">
+          <span class="cbui-table-cell cbui-tablerow-title">{{appname}}</span>
+          </span>
+        </div>
+        <div class="cbui-tablerow-expanded"
+             ng-if="app.actionsVisible">
+          <p class="width-6">{{app.settings.description}}</p>
+          <div class="width-12 text-right">
+            <button
+              class="outline"
+              ng-click="$event.stopPropagation();viewCtrl.deleteApp(app.appname)"
+		ng-disabled="app.settings.processing_status || app.settings.deployment_status">
+              Delete
+            </button>
+           <button
+              ng-click="$event.stopPropagation();"
+              ui-sref="app.admin.eventing.Viewhandler({appName:app.appname})"
+              ng-disabled="viewCtrl.disableEditButton">
+              Edit JavaScript
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div ng-if="viewCtrl.isAppListEmpty()">
+      <p class="zero-content">No Saved Functions. ADD above to begin.</p>
+    </div>
+  </div>
+  <div ng-if="viewCtrl.errorState">
+    <p>Something went wrong with the Eventing service.</p>
+  </div>
+  <div ng-if="viewCtrl.errorCode && summaryCtrl.errorCode == 403">
+    <p>User does not have sufficient privileges to access eventing UI.</p>
+  </div>
+</div>
+<div ng-if="!viewCtrl.isEventingRunning">
+  <p>The Eventing interface is only available on Couchbase nodes running the Eventing service.</p>
+  <p ng-if="viewCtrl.serverNodes.length === 0" class="error">No Eventing nodes were found on this cluster.</p>
+  <div ng-if="viewCtrl.serverNodes.length">
+    <p>The Eventing service was found on the following nodes:</p>
+    <ul class="nobullet">
+    </ul>
+  </div>
+</div>
