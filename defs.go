@@ -19,8 +19,8 @@ const (
 	metakvRebalanceProgress  = metakvEventingPath + "rebalanceProgress/"
 	metakvTempAppsPath       = metakvEventingPath + "tempApps/"
 	stopRebalance            = "stopRebalance"
-	metakvTempViewAppsPath  = metakvEventingPath + "viewTemp/"
-	metakvViewAppsPath	 = metakvEventingPath + "view/"
+	metakvTempViewAppsPath   = metakvEventingPath + "viewTemp/"
+	metakvViewAppsPath       = metakvEventingPath + "view/"
 )
 
 const (
@@ -119,6 +119,12 @@ type application struct {
 	DeploymentConfig depCfg                 `json:"depcfg"`
 	AppHandlers      string                 `json:"appcode"`
 	Settings         map[string]interface{} `json:"settings"`
+}
+
+type jsonType struct {
+	Name        string `json:"appname"`
+	AppCode     string `json:"appcode"`
+	Description string `json:"description"`
 }
 
 type depCfg struct {

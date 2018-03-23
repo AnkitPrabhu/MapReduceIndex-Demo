@@ -9,6 +9,7 @@
      class="animate-alert alert enable-ng-animation ng-scope alert-warning">
   <p class="ng-binding">{{formCtrl.warningMessage}}</p>
 </div>
+
 <div class="dialog-lg">
   <div class="panel-header">
     <h2 ng-show="formCtrl.isDialog">Add Function</h2>
@@ -41,7 +42,7 @@
       </div>
       <div class="formrow">
         <label>Description</label>
-        <textarea rows="3" ng-model="appModel.settings.description">
+        <textarea rows="3" ng-model="appModel.description">
         </textarea>
       </div>
     </div>
@@ -70,4 +71,3 @@
     </div>
   </form>
 </div>
-
