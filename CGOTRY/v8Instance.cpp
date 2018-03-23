@@ -1,78 +1,81 @@
 #include "v8Instance.hpp"
 
-void Generate(v8::Local<v8::Value> value,int* typeArray,ValueForType* ValArray,v8::Isolate* isolate,int* index,int* Vindex){
+void Generate(v8::Local<v8::Value> value,int* typeArray,ValueForType* ValArray,v8::Isolate* isolate,int& index,int& Vindex){
     if(value->IsString()){
-        typeArray[*index++]=STRING;
+        typeArray[index++]=STRING;
         v8::String::Utf8Value const strResult(value);
-        ValArray[*Vindex++].stringValue=std::string(*strResult, strResult.length());
+        ValArray[Vindex++].stringValue=std::string(*strResult, strResult.length());
         return;
     }
     
     if(value->IsNumber()){
         if(value->IsInt32() || value->IsUint32()){
-            typeArray[*index++]=INTNUMBER;
-            ValArray[*Vindex++].intValue=value->IntegerValue();
+            typeArray[index++]=INTNUMBER;
+            ValArray[Vindex++].intValue=value->IntegerValue();
+            
         }else{
-            typeArray[*index++]=FLOATNUMBER;
-            ValArray[*Vindex++].doubleValue=value->NumberValue();
+            typeArray[index++]=FLOATNUMBER;
+            ValArray[Vindex++].doubleValue=value->NumberValue();
         }
         return;
     }
     
     if(value->IsBoolean()){
         if(value->IsTrue()){
-            typeArray[*index++]=BOOLEANTRUE;
+            typeArray[index++]=BOOLEANTRUE;
         }else{
-            typeArray[*index++]=BOOLEANFALSE;
+            typeArray[index++]=BOOLEANFALSE;
         }
         return;
     }
     
     if(value->IsArray()){
-        typeArray[*index++]=ARRAYSTART;
+        typeArray[index++]=ARRAYSTART;
         v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(value);
         for(int i=0;i<array->Length();i++){
             Generate(array->Get(i),typeArray,ValArray,isolate,index,Vindex);
         }
-        typeArray[*index++]=ARRAYEND;
+        typeArray[index++]=ARRAYEND;
         return;
     }
     
     if(value->IsMap()){
-        typeArray[*index++]=MAPSTART;
+        typeArray[index++]=MAPSTART;
         v8::Local<v8::Map> map = v8::Local<v8::Map>::Cast(value);
         v8::Local<v8::Array> array = map->AsArray();
-        ValArray[*Vindex++].intValue=value->Int32Value();
+        ValArray[Vindex++].intValue=value->Int32Value();
         for(int i=0;i<array->Length();i++){
             Generate(array->Get(i),typeArray,ValArray,isolate,index,Vindex);
         }
-        typeArray[*index++]=MAPEND;
+        typeArray[index++]=MAPEND;
         return;
     }
 
     if(value->IsUndefined() || value->IsNull()){
-        typeArray[*index++]=UNDEFINED;
+        typeArray[index++]=UNDEFINED;
         return;
     }
     
     if(value->IsObject()){
-        typeArray[*index++]=JSONSTRING;
+        typeArray[index++]=JSONSTRING;
         v8::Local<v8::Object> json = isolate->GetCurrentContext()->Global()->Get(v8::String::NewFromUtf8(isolate, "JSON"))->ToObject();
         v8::Local<v8::Function> stringify = json->Get(v8::String::NewFromUtf8(isolate, "stringify")).As<v8::Function>();
         v8::Local<v8::Value> result;
         result = stringify->Call(json, 1, &value);
         
         v8::String::Utf8Value const strResult(result);
-        ValArray[*Vindex++].stringValue=std::string(*strResult, strResult.length());
+        ValArray[Vindex++].stringValue=std::string(*strResult, strResult.length());
     }
 }
 
 void Emit(const v8::FunctionCallbackInfo<v8::Value>& args){
         auto isolate=args.GetIsolate();
         auto x = (Data *)isolate->GetData(0);
+        int index=0,valueIndex=0;
         for(int i=0;i<args.Length();i++){
-            Generate(args[i],x->Rmsg->type,x->Rmsg->arr,isolate,&x->Rmsg->length,&x->Rmsg->ValueLength);
+            Generate(args[i],x->Rmsg->type,x->Rmsg->arr,isolate,index,valueIndex);
         }
+        x->Rmsg->length=index;
 }
 
 v8Instance::v8Instance(v8::Platform *platform){
